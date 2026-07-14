@@ -1335,7 +1335,13 @@ h3 {
   letter-spacing: -0.04em;
 }
 
-.intro-hero h1 span {
+.intro-hero h1 .intro-title-line {
+  display: block;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.intro-hero h1 .intro-title-accent {
   color: #e77980;
 }
 
