@@ -1,0 +1,10 @@
+{
+  "name": "familyfin-couple-money-fit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "好理家在情侶金錢默契測驗公開 MVP",
+  "scripts": {
+    "check": "node --check data.js && node --check scoring.js && node --check app.js",
+    "test": "node --test tests/scoring.test.js"
+  }
+}

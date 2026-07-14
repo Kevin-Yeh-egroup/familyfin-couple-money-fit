@@ -1,0 +1,86 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const scoring = require("../scoring.js");
+
+function healthyAnswers(preferenceValue = 1) {
+  return {
+    q1: preferenceValue,
+    q2: "b",
+    q3: preferenceValue,
+    q4: "a",
+    q5: preferenceValue,
+    q6: "a",
+    q7: preferenceValue,
+    q8: "c",
+    q9: preferenceValue,
+    q10: "c",
+    q11: 1,
+    q12: "b",
+    q13: "listen",
+    q14: "plan"
+  };
+}
+
+test("matching healthy answers produce a high but non-diagnostic score", () => {
+  const result = scoring.calculatePairResult(healthyAnswers(1), healthyAnswers(1));
+  assert.equal(result.score, 95);
+  assert.equal(result.typeKey, "cocreate");
+  assert.equal(result.privateControlFlagCount, 0);
+  assert.equal(result.confidence, 100);
+});
+
+test("one-step preference differences with strong collaboration count as healthy complement", () => {
+  const left = healthyAnswers(1);
+  const right = healthyAnswers(2);
+  right.q11 = 2;
+  const result = scoring.calculatePairResult(left, right);
+  assert.ok(result.axes.slice(0, 5).every((axis) => axis.preferenceScore === 100));
+  assert.ok(result.axes.some((axis) => axis.status === "complement"));
+  assert.ok(result.score >= 90);
+});
+
+test("matching control answers do not receive a high compatibility score", () => {
+  const left = healthyAnswers(1);
+  const right = healthyAnswers(1);
+  for (const answer of [left, right]) {
+    answer.q4 = "d";
+    answer.q6 = "d";
+    answer.q8 = "d";
+    answer.q10 = "d";
+  }
+  const result = scoring.calculatePairResult(left, right);
+  assert.equal(result.typeKey, "foundation");
+  assert.equal(result.privateControlFlagCount, 8);
+  assert.ok(result.axes.find((axis) => axis.id === "spending").score < 40);
+  assert.ok(result.score < 70);
+});
+
+test("independent but transparent couples can be classified as dual track", () => {
+  const left = healthyAnswers(2);
+  const right = healthyAnswers(2);
+  left.q7 = right.q7 = 2;
+  left.q9 = right.q9 = 2;
+  const result = scoring.calculatePairResult(left, right);
+  assert.equal(result.typeKey, "dualTrack");
+  assert.ok(result.axes.find((axis) => axis.id === "transparency").score >= 70);
+  assert.ok(result.axes.find((axis) => axis.id === "autonomy").score >= 70);
+});
+
+test("skipping sensitive questions lowers confidence without creating a control flag", () => {
+  const left = healthyAnswers(1);
+  const right = healthyAnswers(1);
+  left.q8 = "skipped";
+  right.q12 = "skipped";
+  const result = scoring.calculatePairResult(left, right);
+  assert.equal(result.privateControlFlagCount, 0);
+  assert.ok(result.confidence < 100);
+  assert.ok(result.score > 70);
+});
+
+test("repair style compatibility matrix preserves useful differences", () => {
+  assert.equal(scoring.repairPreferenceScore(1, 2), 90);
+  assert.equal(scoring.repairPreferenceScore(0, 2), 55);
+  assert.equal(scoring.repairPreferenceScore(3, 3), 95);
+});
