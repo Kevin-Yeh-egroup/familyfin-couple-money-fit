@@ -128,7 +128,7 @@
         <div class="intro-hero">
           <div class="intro-symbol" aria-hidden="true">♡</div>
           <span class="intro-kicker">好理家在・情侶金錢默契測驗</span>
-          <h1 id="landing-title"><span class="intro-title-line">想知道你們的錢，</span><span class="intro-title-line intro-title-accent">合不合拍嗎？</span></h1>
+          <h1 id="landing-title"><span class="intro-title-line">想知道你們的財務，</span><span class="intro-title-line intro-title-accent">合不合拍嗎？</span></h1>
           <h2>不是看誰比較會理財，而是看看兩人怎麼一起面對金錢</h2>
           <p class="intro-lead">很多情侶不是不願意談錢，只是不知道怎麼開始。這個小測驗用 14 個生活情境，陪你們整理彼此的習慣、在意的事，以及最值得先說清楚的一件事。</p>
           <ul class="intro-facts" aria-label="測驗資訊">
