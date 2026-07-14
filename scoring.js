@@ -21,6 +21,14 @@
   const isSkipped = (answers, questionId) =>
     !answers || answers[questionId] === undefined || answers[questionId] === "skipped";
 
+  function scoreLevelFor(score) {
+    const normalized = clamp(Number(score) || 0);
+    return (
+      data.scoreLevels.find((level) => normalized >= level.min && normalized <= level.max) ||
+      data.scoreLevels[0]
+    );
+  }
+
   function standardPreferenceScore(valueA, valueB, bothReady) {
     const gap = Math.abs(Number(valueA) - Number(valueB));
     if (gap === 0) return 95;
@@ -182,6 +190,7 @@
 
     return {
       score,
+      scoreLevel: scoreLevelFor(score),
       rawScore: Math.round(rawScore * 10) / 10,
       typeKey,
       type: data.resultTypes[typeKey],
@@ -198,14 +207,76 @@
     };
   }
 
+  function recommendServices(result) {
+    const priorities = {
+      askAI: 30,
+      accounting: 20,
+      timeResource: 15,
+      financialPlanning: 20,
+      consultation: 5
+    };
+    const add = (id, value) => {
+      priorities[id] = (priorities[id] || 0) + value;
+    };
+    const focusId = result.focus?.id || "repair";
+    const focusLabel = result.focus?.shortLabel || "目前最值得先談的地方";
+
+    const focusPriorities = {
+      safety: { financialPlanning: 100, askAI: 40 },
+      spending: { accounting: 100, askAI: 30 },
+      future: { financialPlanning: 100, askAI: 30 },
+      transparency: { askAI: 100, timeResource: 25 },
+      autonomy: { timeResource: 100, financialPlanning: 30 },
+      repair: { askAI: 100, timeResource: 60 }
+    };
+    Object.entries(focusPriorities[focusId] || {}).forEach(([id, value]) => add(id, value));
+
+    if (result.typeKey === "foundation") {
+      add("consultation", 150);
+      add("askAI", 20);
+    } else if (result.typeKey === "dualTrack") {
+      add("timeResource", 60);
+      add("financialPlanning", 20);
+    } else if (result.typeKey === "complement") {
+      add("askAI", 40);
+      add("timeResource", 30);
+      add("financialPlanning", 20);
+    } else if (result.typeKey === "cocreate") {
+      add("financialPlanning", 120);
+      add("accounting", 20);
+    }
+
+    if (result.privateControlFlagCount > 0) add("consultation", 100);
+
+    const reasons = {
+      askAI: `你們最值得先談的是「${focusLabel}」。可以先把卡住的地方整理成一句問題，找一個比較容易開始的方向。`,
+      accounting: "把日常收支從印象變成看得見的資料，比較容易一起討論自由額度、共同開銷和存錢安排。",
+      timeResource: "金錢分工不只看收入，也包含時間、體力、技能、知識與人脈；適合一起看見彼此沒有寫在帳單上的付出。",
+      financialPlanning: "把共同目標、期限、可投入的金額與緊急預備金放在同一份規劃裡，讓想法慢慢變成做得到的步驟。",
+      consultation:
+        result.typeKey === "foundation"
+          ? "如果金錢壓力已經影響生活，或兩人一談就卡住，可以先查看申請條件，讓專業人員陪著釐清狀況與方向。"
+          : "當你們需要中立的第三方一起釐清收支、債務或重大決定時，可以查看真人諮詢的申請方式。"
+    };
+
+    return data.services
+      .map((service, index) => ({
+        ...service,
+        priority: priorities[service.id],
+        reason: reasons[service.id],
+        sourceOrder: index
+      }))
+      .sort((left, right) => right.priority - left.priority || left.sourceOrder - right.sourceOrder);
+  }
+
   function personalPreview(answers) {
     const safetyValue = answers?.q1;
-    let rhythm = "你習慣在安全感與生活享受之間找自己的節奏。";
+    let rhythm = "你會在安心存錢和享受生活之間，找自己舒服的比例。";
     if (safetyValue !== undefined && safetyValue !== "skipped") {
-      if (Number(safetyValue) <= 0) rhythm = "你通常會先把安全感安頓好，再考慮享受。";
-      else if (Number(safetyValue) === 1) rhythm = "你偏好先留住大部分安全感，也保留一點慶祝空間。";
-      else if (Number(safetyValue) === 2) rhythm = "你喜歡把規劃與享受放在同一張桌上。";
-      else rhythm = "你重視一起創造回憶，不想讓金錢只剩下防守。";
+      if (Number(safetyValue) <= 0) rhythm = "你通常會先把錢留住，覺得安心後再考慮享受。";
+      else if (Number(safetyValue) === 1) rhythm = "你傾向先存下大部分，也會留一點空間慶祝。";
+      else if (Number(safetyValue) === 2) rhythm = "你喜歡一邊為未來打算，也一邊享受現在。";
+      else rhythm = "你很重視兩人一起留下回憶，也願意為此花錢。";
     }
 
     const support = data.supportCopy[answers?.q13 ?? "skipped"] || data.supportCopy.skipped;
@@ -217,12 +288,14 @@
 
   function explainStatus(status) {
     if (status === "aligned") return "本來就有默契";
-    if (status === "complement") return "不同，但可能剛好互補";
-    return "先約規則會更安心";
+    if (status === "complement") return "想法不同，但可以互補";
+    return "先說好做法會更安心";
   }
 
   const scoring = {
     calculatePairResult,
+    scoreLevelFor,
+    recommendServices,
     personalPreview,
     explainStatus,
     standardPreferenceScore,

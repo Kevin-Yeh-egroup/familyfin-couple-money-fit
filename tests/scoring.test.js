@@ -84,3 +84,31 @@ test("repair style compatibility matrix preserves useful differences", () => {
   assert.equal(scoring.repairPreferenceScore(0, 2), 55);
   assert.equal(scoring.repairPreferenceScore(3, 3), 95);
 });
+
+test("score levels cover every display boundary", () => {
+  assert.equal(scoring.scoreLevelFor(0).id, "safetyFirst");
+  assert.equal(scoring.scoreLevelFor(54).id, "safetyFirst");
+  assert.equal(scoring.scoreLevelFor(55).id, "foundation");
+  assert.equal(scoring.scoreLevelFor(69).id, "foundation");
+  assert.equal(scoring.scoreLevelFor(70).id, "growing");
+  assert.equal(scoring.scoreLevelFor(84).id, "growing");
+  assert.equal(scoring.scoreLevelFor(85).id, "stable");
+  assert.equal(scoring.scoreLevelFor(100).id, "stable");
+});
+
+test("service recommendations respond to type and risk without hiding other services", () => {
+  const healthyResult = scoring.calculatePairResult(healthyAnswers(1), healthyAnswers(1));
+  const healthyServices = scoring.recommendServices(healthyResult);
+  assert.equal(healthyResult.scoreLevel.id, "stable");
+  assert.equal(healthyServices[0].id, "financialPlanning");
+  assert.equal(new Set(healthyServices.map((service) => service.id)).size, 5);
+
+  const left = healthyAnswers(1);
+  const right = healthyAnswers(1);
+  left.q4 = right.q4 = "d";
+  left.q6 = right.q6 = "d";
+  const foundationResult = scoring.calculatePairResult(left, right);
+  const foundationServices = scoring.recommendServices(foundationResult);
+  assert.equal(foundationResult.typeKey, "foundation");
+  assert.equal(foundationServices[0].id, "consultation");
+});
