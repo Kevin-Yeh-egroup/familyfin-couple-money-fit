@@ -1,8 +1,9 @@
 (function attachQuizTracking(globalScope) {
   "use strict";
 
-  const storageKey = "familyfin-couple-money-fit-growth-v1";
+  const toolId = "couple-money-fit";
   const version = 1;
+  const schemaVersion = 2;
   const maxRecords = 8;
 
   const clamp = (value, min = 0, max = 100) =>
@@ -28,6 +29,13 @@
       .filter((axis) => axis.id && axis.label);
   }
 
+  function normalizeGrowthGoal(goal) {
+    if (!goal) return null;
+    const id = String(typeof goal === "string" ? goal : goal.id || "").trim();
+    const label = String(typeof goal === "object" ? goal.label || "" : "").trim();
+    return id ? { id, label } : null;
+  }
+
   function normalizeSnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return null;
     const date = new Date(snapshot.testedAt);
@@ -35,8 +43,14 @@
       ? String(snapshot.testedOn)
       : localDateKey(date);
     const axes = normalizeAxes(snapshot.axes);
+    const growthGoal = normalizeGrowthGoal(
+      snapshot.growthGoal ||
+        (snapshot.growthGoalId
+          ? { id: snapshot.growthGoalId, label: snapshot.growthGoalLabel }
+          : null)
+    );
     if (!testedOn || Number.isNaN(date.getTime()) || axes.length === 0) return null;
-    return {
+    const normalized = {
       testedAt: date.toISOString(),
       testedOn,
       score: clamp(Math.round(Number(snapshot.score) || 0)),
@@ -44,6 +58,11 @@
       typeName: String(snapshot.typeName || ""),
       axes
     };
+    if (growthGoal) {
+      normalized.growthGoalId = growthGoal.id;
+      normalized.growthGoalLabel = growthGoal.label;
+    }
+    return normalized;
   }
 
   function normalizeHistory(input) {
@@ -62,19 +81,37 @@
       .slice(-maxRecords);
   }
 
-  function createSnapshot(result, testedAt = new Date()) {
+  function createSnapshot(result, testedAt = new Date(), growthGoal = null) {
     const date = testedAt instanceof Date ? testedAt : new Date(testedAt);
     const axes = normalizeAxes(result?.axes);
     if (!result || Number.isNaN(date.getTime()) || axes.length === 0) {
       throw new Error("無法建立這次的追蹤紀錄。");
     }
-    return {
+    const snapshot = {
       testedAt: date.toISOString(),
       testedOn: localDateKey(date),
       score: clamp(Math.round(Number(result.score) || 0)),
       typeKey: String(result.typeKey || ""),
       typeName: String(result.type?.name || result.typeName || ""),
       axes
+    };
+    const normalizedGoal = normalizeGrowthGoal(growthGoal);
+    if (normalizedGoal) {
+      snapshot.growthGoalId = normalizedGoal.id;
+      snapshot.growthGoalLabel = normalizedGoal.label;
+    }
+    return snapshot;
+  }
+
+  function createPlatformPayload(resultOrSnapshot, testedAt = new Date(), growthGoal = null) {
+    const snapshot = resultOrSnapshot?.testedOn
+      ? normalizeSnapshot(resultOrSnapshot)
+      : createSnapshot(resultOrSnapshot, testedAt, growthGoal);
+    if (!snapshot) throw new Error("無法建立個人中心保存資料。");
+    return {
+      toolId,
+      schemaVersion,
+      ...snapshot
     };
   }
 
@@ -89,6 +126,7 @@
     if (!target) return false;
     return normalizeHistory(history).some((record) => {
       if (record.testedOn !== target.testedOn || record.score !== target.score) return false;
+      if (target.growthGoalId && record.growthGoalId !== target.growthGoalId) return false;
       return target.axes.every((axis) =>
         record.axes.some((savedAxis) => savedAxis.id === axis.id && savedAxis.score === axis.score)
       );
@@ -120,12 +158,15 @@
   }
 
   const api = {
-    storageKey,
+    toolId,
     version,
+    schemaVersion,
     maxRecords,
     localDateKey,
     normalizeHistory,
+    normalizeGrowthGoal,
     createSnapshot,
+    createPlatformPayload,
     upsertSnapshot,
     containsSnapshot,
     addMonths,

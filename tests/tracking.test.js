@@ -21,6 +21,40 @@ test("creates a privacy-minimal growth snapshot", () => {
   assert.equal("answers" in snapshot, false);
 });
 
+test("creates a personal-center payload with the selected growth goal", () => {
+  const payload = tracking.createPlatformPayload(
+    result(),
+    new Date("2026-07-14T12:00:00+08:00"),
+    { id: "plan", label: "對未來有更穩定的共同計畫" }
+  );
+  assert.equal(payload.toolId, "couple-money-fit");
+  assert.equal(payload.schemaVersion, 2);
+  assert.equal(payload.testedOn, "2026-07-14");
+  assert.equal(payload.score, 80);
+  assert.equal(payload.growthGoalId, "plan");
+  assert.equal(payload.growthGoalLabel, "對未來有更穩定的共同計畫");
+  assert.equal("answers" in payload, false);
+  assert.equal("pairCode" in payload, false);
+  assert.equal("privateNote" in payload, false);
+});
+
+test("growth goals survive history normalization and same-day replacement", () => {
+  const first = tracking.createSnapshot(
+    result(70),
+    new Date("2026-07-14T09:00:00+08:00"),
+    { id: "enjoy", label: "花錢享受時更自在" }
+  );
+  const second = tracking.createSnapshot(
+    result(85),
+    new Date("2026-07-14T20:00:00+08:00"),
+    { id: "plan", label: "對未來有更穩定的共同計畫" }
+  );
+  const history = tracking.upsertSnapshot(tracking.upsertSnapshot([], first), second);
+  assert.equal(history.length, 1);
+  assert.equal(history[0].growthGoalId, "plan");
+  assert.equal(history[0].growthGoalLabel, "對未來有更穩定的共同計畫");
+});
+
 test("saving again on the same day replaces instead of duplicating", () => {
   const first = tracking.createSnapshot(result(70), new Date("2026-07-14T09:00:00+08:00"));
   const second = tracking.createSnapshot(result(85), new Date("2026-07-14T20:00:00+08:00"));

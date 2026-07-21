@@ -3,6 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const scoring = require("../scoring.js");
+const data = require("../data.js");
 
 function healthyAnswers(preferenceValue = 1) {
   return {
@@ -101,7 +102,16 @@ test("service recommendations respond to type and risk without hiding other serv
   const healthyServices = scoring.recommendServices(healthyResult);
   assert.equal(healthyResult.scoreLevel.id, "stable");
   assert.equal(healthyServices[0].id, "financialPlanning");
-  assert.equal(new Set(healthyServices.map((service) => service.id)).size, 5);
+  assert.deepEqual(
+    healthyServices.slice(0, 3).map((service) => service.id),
+    ["financialPlanning", "accounting", "financialCheck"]
+  );
+  assert.deepEqual(
+    healthyServices.slice(0, 3).map((service) => service.role),
+    ["primary", "secondary", "secondary"]
+  );
+  assert.equal(new Set(healthyServices.map((service) => service.id)).size, 7);
+  assert.equal(healthyServices.filter((service) => service.role === "other").length, 4);
 
   const left = healthyAnswers(1);
   const right = healthyAnswers(1);
@@ -111,4 +121,92 @@ test("service recommendations respond to type and risk without hiding other serv
   const foundationServices = scoring.recommendServices(foundationResult);
   assert.equal(foundationResult.typeKey, "foundation");
   assert.equal(foundationServices[0].id, "consultation");
+  assert.deepEqual(
+    foundationServices.slice(0, 3).map((service) => service.id),
+    ["consultation", "financialAnxiety", "financialCheck"]
+  );
+});
+
+test("service recommendations create different one-primary two-secondary combinations", () => {
+  const focusPlans = {
+    safety: ["financialCheck", "financialPlanning", "accounting"],
+    spending: ["accounting", "financialPlanning", "askAI"],
+    future: ["financialPlanning", "accounting", "financialCheck"],
+    transparency: ["askAI", "timeResource", "financialAnxiety"],
+    autonomy: ["timeResource", "financialPlanning", "accounting"],
+    repair: ["askAI", "financialAnxiety", "consultation"]
+  };
+  for (const [focusId, expected] of Object.entries(focusPlans)) {
+    const services = scoring.recommendServices({
+      focus: { id: focusId, shortLabel: focusId },
+      confidence: 100,
+      privateControlFlagCount: 0,
+      typeKey: "complement",
+      scoreLevel: { id: "growing" }
+    });
+    assert.deepEqual(
+      services.slice(0, 3).map((service) => service.id),
+      expected,
+      `${focusId} should use its expected combination`
+    );
+  }
+
+  const dualTrack = scoring.recommendServices({
+    focus: { id: "autonomy", shortLabel: "一起決定" },
+    confidence: 100,
+    privateControlFlagCount: 0,
+    typeKey: "dualTrack",
+    scoreLevel: { id: "growing" }
+  });
+  assert.deepEqual(
+    dualTrack.slice(0, 3).map((service) => service.id),
+    ["timeResource", "financialPlanning", "accounting"]
+  );
+
+  const lowConfidence = scoring.recommendServices({
+    focus: { id: "repair", shortLabel: "壓力修復" },
+    confidence: 65,
+    privateControlFlagCount: 0,
+    typeKey: "complement",
+    scoreLevel: { id: "growing" }
+  });
+  assert.deepEqual(
+    lowConfidence.slice(0, 3).map((service) => service.id),
+    ["askAI", "financialCheck", "timeResource"]
+  );
+
+  const safetyFlag = scoring.recommendServices({
+    focus: { id: "spending", shortLabel: "日常花費" },
+    confidence: 65,
+    privateControlFlagCount: 1,
+    typeKey: "complement",
+    scoreLevel: { id: "growing" }
+  });
+  assert.deepEqual(
+    safetyFlag.slice(0, 3).map((service) => service.id),
+    ["consultation", "financialAnxiety", "financialCheck"]
+  );
+
+  for (const service of lowConfidence) {
+    assert.match(service.href, /^https:\/\/www\.familyfinhealth\.com\//);
+    assert.ok(service.name);
+    assert.ok(service.reason);
+    assert.ok(service.cta);
+  }
+});
+
+test("free consultation is described as an individual service", () => {
+  const service = data.services.find((item) => item.id === "consultation");
+  assert.equal(service.name, "免費個人線上財務諮詢");
+  assert.equal(service.cta, "查看個人諮詢方式");
+
+  const recommendation = scoring.recommendServices({
+    focus: { id: "repair", shortLabel: "壓力修復" },
+    confidence: 100,
+    privateControlFlagCount: 0,
+    typeKey: "foundation",
+    scoreLevel: { id: "foundation" }
+  }).find((item) => item.id === "consultation");
+  assert.match(recommendation.reason, /其中一位|個人/);
+  assert.doesNotMatch(recommendation.reason, /你們需要.*第三方一起/);
 });

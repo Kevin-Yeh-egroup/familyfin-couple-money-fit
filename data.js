@@ -29,7 +29,7 @@
       weight: 0.2,
       preferenceQuestion: "q5",
       collaborationQuestion: "q6",
-      conversation: "投資有起伏時，怎麼做才能讓兩人都比較安心？",
+      conversation: "共同存款要拿來投資或準備未來目標時，兩人能接受多少變動？",
       action: "先挑一個共同目標，談清楚用途、期限，以及最多能接受多少損失。"
     },
     {
@@ -54,7 +54,7 @@
     },
     {
       id: "repair",
-      label: "壓力修復能力",
+      label: "壓力揭露與修復",
       shortLabel: "壓力修復",
       weight: 0.15,
       preferenceQuestion: "q11",
@@ -113,66 +113,67 @@
       id: "q2",
       axis: "safety",
       kind: "collaboration",
-      eyebrow: "旅行情境",
-      text: "一個人想把住宿或行程升級，另一個看到預算就緊張，你比較可能怎麼做？",
+      eyebrow: "旅行預算",
+      text: "訂旅行住宿時，一個想照原預算，另一個想加錢升級，你比較會怎麼做？",
       options: [
-        { value: "a", score: 3, label: "先照原本的安排，等兩人都安心再升級" },
-        { value: "b", score: 4, label: "把價差和差別列出來，再選兩人都能接受的版本" },
-        { value: "c", score: 4, label: "想升級的人補差額，但先確認不會影響共同開銷" },
-        { value: "d", score: 1, label: "難得出去玩，就先訂了再說" }
+        { value: "a", score: 3, label: "先照原預算：兩人都安心後，再考慮升級" },
+        { value: "b", score: 4, label: "一起比價：看完房型和價差，再選都能接受的版本" },
+        { value: "c", score: 4, label: "想升級的人補差額：先確認不影響共同開銷" },
+        { value: "d", score: 1, label: "先訂再說：難得旅行一次，就先把喜歡的房型訂下來" }
       ]
     },
     {
       id: "q3",
       axis: "spending",
       kind: "preference",
-      eyebrow: "日常消費節奏",
+      eyebrow: "日常約會",
       text: "週五晚上突然都有空，你心中理想的約會比較像哪一種？",
       options: [
-        { value: 0, label: "散步、在家煮飯，不太花錢也能很開心" },
-        { value: 1, label: "先說好預算，再挑想吃、想玩的" },
-        { value: 2, label: "看當天心情，輪流決定" },
-        { value: 3, label: "有感覺就升級，不想一直被預算綁住" }
+        { value: 0, label: "簡單就好：散步、吃小吃或在家煮飯，不太花錢也能開心" },
+        { value: 1, label: "先抓預算：再挑兩人想吃、想玩的" },
+        { value: 2, label: "看當天心情：這次你決定，下次換我" },
+        { value: 3, label: "想升級就升級：難得都有空，不想一直被預算綁住" }
       ]
     },
     {
       id: "q4",
       axis: "spending",
       kind: "collaboration",
-      eyebrow: "大額支出",
-      text: "對方買了一樣東西，金額超過兩人原本說好的上限，你的第一反應比較像哪一種？",
+      eyebrow: "超出約定的花費",
+      text: "伴侶買了鞋子、3C 或收藏品，金額比平常高不少，你第一個反應比較像？",
       options: [
-        { value: "a", score: 4, label: "先問發生什麼事，再談會不會影響兩人的安排" },
-        { value: "b", score: 4, label: "先讓自己冷靜，另外找時間談原本的約定要不要調整" },
-        { value: "c", score: 1, label: "先不說，自己少花一點把錢補回來" },
-        { value: "d", score: 0, flag: "control", label: "要求退貨，以後超過這個金額都要先經過我同意" }
+        { value: "a", score: 4, label: "先了解：問他為什麼買，再確認會不會影響兩人的安排" },
+        { value: "b", score: 4, label: "先冷靜：另外找時間談這類花費要不要先說" },
+        { value: "c", score: 1, label: "先不說：自己少花一點，默默把錢補回來" },
+        { value: "d", score: 0, flag: "control", label: "要求退貨：以後這類花費都要先經過我同意" }
       ]
     },
     {
       id: "q5",
       axis: "future",
       kind: "preference",
-      eyebrow: "未來準備與風險",
-      text: "如果有一筆兩人一起存的錢，三年內不會用到，你比較安心的安排是？",
+      eyebrow: "共同目標怎麼存",
+      text: "如果要為一年後的旅行、搬家或換車存錢，你比較喜歡哪種準備方式？",
+      helper: "沒有共同帳戶也可以回答，請選最接近你自己的存錢節奏。",
       options: [
-        { value: 0, label: "放在隨時能用、變動比較小的地方" },
-        { value: 1, label: "大部分求穩，少部分爭取成長" },
-        { value: 2, label: "分散安排，可以接受一些漲跌" },
-        { value: 3, label: "可以接受比較大的漲跌，爭取更多成長機會" }
+        { value: 0, label: "先存再花：每月先放好要存的錢，其他花費再安排" },
+        { value: 1, label: "固定準備：每月存一筆，也保留一點生活彈性" },
+        { value: 2, label: "彈性準備：有餘裕就多存，開銷多時可以少存" },
+        { value: 3, label: "有多再存：平常照原本生活，有獎金或額外收入再補" }
       ]
     },
     {
       id: "q6",
       axis: "future",
       kind: "collaboration",
-      eyebrow: "市場波動",
-      text: "如果兩人一起投資的錢暫時虧損 15%，你最希望怎麼處理？",
-      helper: "目前沒有一起投資也沒關係，想像這個情況作答就好。",
+      eyebrow: "計畫碰到臨時支出",
+      text: "原本存錢準備旅行或搬家，卻突然有一筆必要支出，兩人意見不同時，你希望怎麼處理？",
+      helper: "例如家電故障、機車維修或臨時需要支援家人。",
       options: [
-        { value: "a", score: 4, label: "先不要急著動，重新確認目標、期限和能承受的損失" },
-        { value: "b", score: 4, label: "先把風險降到兩人都比較安心，再重新討論" },
-        { value: "c", score: 4, label: "先照原本計畫，但讓比較不安的人把問題問清楚" },
-        { value: "d", score: 0, flag: "control", label: "交給比較懂投資的人決定，另一個不要管" }
+        { value: "a", score: 4, label: "先看必要程度：一起確認能不能延後或分次處理" },
+        { value: "b", score: 4, label: "先調整目標：改變時間或規模，找到都能接受的版本" },
+        { value: "c", score: 4, label: "先找其他做法：分開負擔，但不影響彼此基本生活" },
+        { value: "d", score: 0, flag: "control", label: "出錢多的人決定：另一個人不要插手" }
       ]
     },
     {
@@ -180,13 +181,13 @@
       axis: "transparency",
       kind: "preference",
       eyebrow: "坦白與個人空間",
-      text: "你希望兩人把金錢狀況說到什麼程度？",
+      text: "你希望兩人的金錢資訊分享到什麼程度？",
       helper: "沒有哪一種一定最好；重點是兩人都同意，也不隱瞞會影響共同生活的事。",
       options: [
-        { value: 0, label: "彼此都看得到所有收支和帳目" },
-        { value: 1, label: "收入、負債、固定負擔和大筆花費會說，日常花費保留自由" },
-        { value: 2, label: "共同帳戶和共同目標說清楚，個人帳戶各自保留" },
-        { value: 3, label: "大多各自管理，但會影響兩人生活的事一定主動說" }
+        { value: 0, label: "全部透明：彼此都看得到所有收支和帳目" },
+        { value: 1, label: "重要資訊透明：收入、負債和大筆花費會說，日常保留自由" },
+        { value: 2, label: "共同部分透明：共同開銷說清楚，個人帳戶各自保留" },
+        { value: 3, label: "各自管理為主：會影響兩人生活的事一定主動說" }
       ]
     },
     {
@@ -195,12 +196,13 @@
       kind: "collaboration",
       sensitive: true,
       eyebrow: "查看明細與個人空間",
-      text: "伴侶說：「我想看你的銀行或信用卡明細。」你希望怎麼處理？",
+      text: "伴侶想看你的銀行或信用卡明細，你比較能接受哪種做法？",
+      helper: "這題想了解的是分享範圍、同意方式與查看界線。",
       options: [
-        { value: "a", score: 3, label: "直接給對方看，對我來說沒有壓力" },
-        { value: "b", score: 4, label: "先問對方在擔心什麼，只分享會影響兩人生活的部分" },
-        { value: "c", score: 4, label: "先說好要看哪些內容、為什麼要看，以及看到什麼時候" },
-        { value: "d", score: 0, flag: "control", label: "不給看就代表有問題，所以彼此都應該隨時能查看" }
+        { value: "a", score: 3, label: "這次完整分享：我願意給看，但不代表以後都能查看" },
+        { value: "b", score: 4, label: "只看相關項目：先說清楚擔心什麼，再分享相關明細" },
+        { value: "c", score: 4, label: "先訂查看規則：說好看什麼、什麼時候看" },
+        { value: "d", score: 0, flag: "control", label: "直接交出帳密：不給看就代表有問題" }
       ]
     },
     {
@@ -220,13 +222,13 @@
       id: "q10",
       axis: "autonomy",
       kind: "collaboration",
-      eyebrow: "重大決策",
-      text: "遇到重要的金錢決定，兩人意見不一樣時，你比較能接受哪個做法？",
+      eyebrow: "重要金錢決定",
+      text: "遇到買房、換車或共同投資等重要決定，兩人意見不同時，你比較能接受哪種做法？",
       options: [
-        { value: "a", score: 4, label: "比較懂的人先提方案，但要兩人都同意才做" },
-        { value: "b", score: 4, label: "先不要改變，說好下一次要在什麼時候繼續談" },
-        { value: "c", score: 4, label: "不影響共同目標就各自決定；有影響才一起決定" },
-        { value: "d", score: 0, flag: "control", label: "收入比較高或出錢比較多的人做最後決定" }
+        { value: "a", score: 4, label: "懂的人先提方案：兩人都同意才做" },
+        { value: "b", score: 4, label: "先不做決定：約好下次什麼時候再談" },
+        { value: "c", score: 4, label: "看共同影響：不影響共同目標就各自決定" },
+        { value: "d", score: 0, flag: "control", label: "出錢多的人決定：他有最後決定權" }
       ]
     },
     {
@@ -250,15 +252,18 @@
       kind: "collaboration",
       sensitive: true,
       eyebrow: "壓力揭露",
-      text: "如果你碰到債務、收入變少，或需要多負擔家裡開銷，你比較可能怎麼做？",
+      text: "如果你遇到債務、收入變少或家庭支出增加，你比較可能怎麼告訴伴侶？",
       helper: "這不是誠實測驗。如果擔心被責怪，可以先說到自己覺得安全的程度。",
       options: [
-        { value: "a", score: 4, label: "一開始就告訴對方，也一起談可能會有哪些影響" },
-        { value: "b", score: 3, label: "先把大概的情況整理好，再告訴對方" },
-        { value: "c", score: 3, label: "先說「我最近有金錢壓力」，覺得安全一點再談細節" },
-        { value: "d", score: 1, label: "先不讓伴侶知道，怕被看不起或拖累對方" }
+        { value: "a", score: 4, label: "盡早告訴對方：也一起談可能會有哪些影響" },
+        { value: "b", score: 3, label: "先整理再說：弄清楚大概狀況後再談" },
+        { value: "c", score: 3, label: "先說我有壓力：覺得安全一點再補細節" },
+        { value: "d", score: 1, label: "暫時不說：怕被看不起或拖累對方" }
       ]
-    },
+    }
+  ];
+
+  const personalizationQuestions = [
     {
       id: "q13",
       kind: "personalization",
@@ -314,6 +319,13 @@
 
   const services = [
     {
+      id: "financialCheck",
+      icon: "🧭",
+      name: "財務韌性檢測",
+      href: "https://www.familyfinhealth.com/financial-resilience",
+      cta: "先了解目前財務狀態"
+    },
+    {
       id: "askAI",
       icon: "✨",
       name: "問問 AI",
@@ -326,6 +338,13 @@
       name: "財務生活記帳助理",
       href: "https://www.familyfinhealth.com/toolbox/financial-calculator/basic-accounting",
       cta: "開始整理收支"
+    },
+    {
+      id: "financialAnxiety",
+      icon: "🌿",
+      name: "財務焦慮檢測",
+      href: "https://www.familyfinhealth.com/financial-anxiety",
+      cta: "整理財務壓力"
     },
     {
       id: "timeResource",
@@ -344,9 +363,9 @@
     {
       id: "consultation",
       icon: "🤝",
-      name: "免費線上財務諮詢",
+      name: "免費個人線上財務諮詢",
       href: "https://www.familyfinhealth.com/online-consultation",
-      cta: "查看諮詢方式"
+      cta: "查看個人諮詢方式"
     }
   ];
 
@@ -398,7 +417,9 @@
     dialogueCards,
     supportCopy,
     goalCopy,
-    version: 1
+    personalizationQuestions,
+    version: 1,
+    questionSetVersion: 2
   };
 
   if (typeof module !== "undefined" && module.exports) {

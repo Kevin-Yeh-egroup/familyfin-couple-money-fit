@@ -5,6 +5,17 @@
   const pairing = window.QuizPairing;
   const scoring = window.QuizScoring;
   const tracking = window.QuizTracking;
+  const growthAdapter = window.FamilyFinGrowthTrackingAdapter || null;
+  const hasGrowthPlatform = Boolean(
+    growthAdapter &&
+    typeof growthAdapter.loadHistory === "function" &&
+    typeof growthAdapter.saveSnapshot === "function"
+  );
+  const growthStore = {
+    status: hasGrowthPlatform ? "idle" : "preview",
+    history: [],
+    saving: false
+  };
   const app = document.getElementById("app");
   const toast = document.getElementById("toast");
   const decoder = new TextDecoder();
@@ -23,6 +34,7 @@
     partnerCode: "",
     result: null,
     resultLink: "",
+    growthGoal: "",
     transitionLocked: false
   };
 
@@ -130,10 +142,10 @@
           <span class="intro-kicker">好理家在・情侶金錢默契測驗</span>
           <h1 id="landing-title"><span class="intro-title-line">想知道你們的財務，</span><span class="intro-title-line intro-title-accent">合不合拍嗎？</span></h1>
           <h2>不是看誰比較會理財，而是看看兩人怎麼一起面對金錢</h2>
-          <p class="intro-lead">很多情侶不是不願意談錢，只是不知道怎麼開始。這個小測驗用 14 個生活情境，陪你們整理彼此的習慣、在意的事，以及最值得先說清楚的一件事。</p>
+          <p class="intro-lead">很多情侶不是不願意談錢，只是不知道怎麼開始。這個小測驗用 12 個生活情境，陪你們整理彼此的習慣、在意的事，以及最值得先說清楚的一件事。</p>
           <ul class="intro-facts" aria-label="測驗資訊">
-            <li>📝 14 題</li>
-            <li>⏱️ 每人約 4～6 分鐘</li>
+            <li>📝 12 題</li>
+            <li>⏱️ 每人約 3～5 分鐘</li>
             <li>🔒 不用輸入金額</li>
             <li>💗 沒有對錯</li>
           </ul>
@@ -152,7 +164,7 @@
               <article class="explain-card">
                 <span class="step-number">01</span>
                 <h3>看到日常情境</h3>
-                <p>約會怎麼花、共同存款怎麼放、談錢卡住時怎麼辦，都是生活中可能碰到的情況。</p>
+                <p>約會怎麼花、旅行要不要升級、共同目標怎麼準備，都是生活中可能碰到的情況。</p>
               </article>
               <article class="explain-card">
                 <span class="step-number">02</span>
@@ -176,7 +188,7 @@
             <div class="result-preview-grid">
               <article><span>結果 01</span><h3>一個整體默契提醒</h3><p>快速看見目前比較合拍、需要多聊，或適合分工的地方。</p></article>
               <article><span>結果 02</span><h3>六個金錢相處面向</h3><p>用雷達圖整理安心感、花費、未來準備、坦白與個人空間等面向。</p></article>
-              <article><span>結果 03</span><h3>可以直接使用的對話卡</h3><p>帶走三個開場問題和一件這週就能一起試試看的小行動。</p></article>
+              <article><span>結果 03</span><h3>可以參考的對話主題</h3><p>整理三個適合你們目前結果的話題，需要時再一起聊。</p></article>
             </div>
           </section>
 
@@ -187,7 +199,7 @@
               <h2 id="phone-title">兩人可以同時作答，不用等對方填完</h2>
               <ol>
                 <li>兩人各自在自己的手機開始測驗。</li>
-                <li>完成後，每人會拿到一組 11 碼配對碼。</li>
+                <li>完成後，每人會拿到一組 10 碼配對碼。</li>
                 <li>交換配對碼，任一支手機都能產生共同報告。</li>
               </ol>
             </div>
@@ -222,7 +234,7 @@
             <span class="mode-badge">推薦</span>
             <div class="mode-icon" aria-hidden="true">📱 ↔ 📱</div>
             <h2>兩支手機各自測</h2>
-            <p>適合兩人坐在一起或遠端同時作答。完成後交換 11 碼配對碼。</p>
+            <p>適合兩人坐在一起或遠端同時作答。完成後交換 10 碼配對碼。</p>
             <ul>
               <li>可以同時開始</li>
               <li>不會先看到對方答案</li>
@@ -269,7 +281,7 @@
         <div class="quiz-heading">
           <span>COUPLE MONEY FIT</span>
           <h2>情侶金錢默契測驗</h2>
-          <p>14 個生活情境，整理你們怎麼一起面對金錢</p>
+          <p>12 個生活情境，整理你們怎麼一起面對金錢</p>
         </div>
         <div class="question-topline">
           <span>問題 ${state.currentIndex + 1} / ${data.questions.length}</span>
@@ -282,6 +294,7 @@
           <span class="eyebrow">${question.eyebrow}</span>
           <h1 id="question-title">${question.text}</h1>
           ${question.helper ? `<p class="question-helper">${question.helper}</p>` : ""}
+          <p class="answer-guidance">選最接近你的做法就好；都不太像或還沒想過，也可以先略過。</p>
           <div class="option-list" role="group" aria-label="答案選項">
             ${question.options
               .map(
@@ -298,7 +311,7 @@
           </div>
           <div class="question-actions">
             <button class="button button-quiet" id="previous-question" ${state.currentIndex === 0 ? "disabled" : ""}>上一題</button>
-            <button class="button button-quiet" id="skip-question">暫時不回答</button>
+            <button class="button button-quiet" id="skip-question">都不太像，先略過</button>
             <button class="button button-quiet" id="exit-quiz">先離開</button>
           </div>
         </article>
@@ -352,11 +365,59 @@
   function completeQuiz() {
     if (state.mode === "pair-solo" || state.mode === "same-a") {
       state.answersA = { ...state.answers };
-      renderPersonalPreview(state.mode === "same-a");
+      renderSupportChoice("a", state.mode === "same-a");
       return;
     }
     state.answersB = { ...state.answers };
-    renderSecondConsent();
+    renderSupportChoice("b", false);
+  }
+
+  function renderSupportChoice(person, sameDevice) {
+    setScreen("support-choice");
+    const question = data.personalizationQuestions.find((item) => item.id === "q13");
+    const answers = person === "a" ? state.answersA : state.answersB;
+    app.innerHTML = `
+      <section class="screen flow-card support-choice-card" aria-labelledby="support-choice-title">
+        <span class="eyebrow">12 題核心測驗已完成</span>
+        <h1 id="support-choice-title">讓提醒更貼近你</h1>
+        <p>下面這題可以選填，不影響分數、配對結果，也不會出現在伴侶看到的共同報告。</p>
+        <div class="optional-question">
+          <span class="optional-pill">選填・不計分</span>
+          <h2>${question.text}</h2>
+          <div class="option-list" role="group" aria-label="私人支持偏好">
+            ${question.options
+              .map(
+                (option, index) => `
+                  <button
+                    class="option-button"
+                    data-support-value="${option.value}"
+                    data-letter="${letters[index]}"
+                    aria-pressed="false"
+                  >${option.label}</button>
+                `
+              )
+              .join("")}
+          </div>
+        </div>
+        <button class="button button-quiet optional-skip" id="skip-support">先略過，繼續</button>
+      </section>
+    `;
+
+    const continueFlow = () => {
+      if (person === "a") renderPersonalPreview(sameDevice);
+      else renderSecondConsent();
+    };
+    app.querySelectorAll("[data-support-value]").forEach((button) => {
+      button.addEventListener("click", () => {
+        answers.q13 = button.dataset.supportValue;
+        continueFlow();
+      });
+    });
+    document.getElementById("skip-support").addEventListener("click", () => {
+      answers.q13 = "skipped";
+      continueFlow();
+    });
+    focusMain();
   }
 
   function renderPersonalPreview(sameDevice) {
@@ -370,9 +431,8 @@
         <ul class="preview-list">
           <li><strong>你的第一個節奏</strong><br>${preview.rhythm}</li>
           <li><strong>你需要的支持</strong><br>${preview.support}</li>
-          <li><strong>你想先改變的事</strong><br>${preview.goal}</li>
         </ul>
-        ${preview.skippedCount ? `<p class="info-strip">你保留了 ${preview.skippedCount} 題。這不會扣分，只會讓配對報告的信心度稍低。</p>` : ""}
+        ${preview.skippedCount ? `<p class="info-strip">你在 12 題核心測驗中保留了 ${preview.skippedCount} 題。這不會扣分，配對報告會用比較保守的方式呈現。</p>` : ""}
         ${personalPrivateNote(state.answersA)}
         <label class="consent-box">
           <input type="checkbox" id="consent-a">
@@ -411,7 +471,7 @@
     const shortLink = shareUrl("pair", state.selfCode);
     app.innerHTML = `
       <section class="screen flow-card pairing-card" aria-labelledby="pair-code-title">
-        <span class="privacy-pill">11 碼・兩人可以同時作答</span>
+        <span class="privacy-pill">10 碼・兩人可以同時作答</span>
         <h1 id="pair-code-title">交換配對碼，就能比對</h1>
         <p>把你的配對碼傳給伴侶，也請對方把完成後的配對碼傳給你。任一方輸入對方的碼，都能看到相同的共同報告。</p>
 
@@ -434,7 +494,7 @@
           autocomplete="off"
           autocapitalize="characters"
           maxlength="16"
-          placeholder="例如：M1A-2BCD-3EFG"
+          placeholder="例如：M2A-2BCD-3EF"
         >
         <p class="pair-error" id="pair-error" role="alert" hidden></p>
         <button class="button button-primary" id="compare-pair" disabled>比對我們的結果</button>
@@ -454,7 +514,7 @@
       try {
         await navigator.share({
           title: "我們的錢，合不合拍？",
-          text: `我的配對碼是 ${state.selfCode}。你完成 14 題後，把你的配對碼傳給我，我們就能比對。`,
+          text: `我的配對碼是 ${state.selfCode}。你完成 12 題後，把你的配對碼傳給我，我們就能比對。`,
           url: shortLink
         });
       } catch (_error) {
@@ -466,7 +526,7 @@
     const compareButton = document.getElementById("compare-pair");
     partnerInput.addEventListener("input", () => {
       partnerInput.value = partnerInput.value.toUpperCase();
-      compareButton.disabled = pairing.normalizeCode(partnerInput.value).length < 11;
+      compareButton.disabled = !pairing.isCompleteCode(partnerInput.value);
       document.getElementById("pair-error").hidden = true;
     });
     compareButton.addEventListener("click", () => comparePairCode(partnerInput.value, compareButton));
@@ -492,16 +552,16 @@
     app.innerHTML = `
       <section class="screen flow-card" aria-labelledby="pair-invite-title">
         <span class="eyebrow">已收到對方的配對碼</span>
-        <h1 id="pair-invite-title">完成你的 14 題，就能直接比對</h1>
+        <h1 id="pair-invite-title">完成你的 12 題，就能直接比對</h1>
         <p>你不會先看到對方選了什麼。請按照自己的想法作答，完成後就會產生兩人的共同報告。</p>
         <div class="received-code"><span>收到的配對碼</span><strong>${state.partnerCode}</strong></div>
         <ul class="trust-row">
-          <li>約 4～6 分鐘</li>
+          <li>約 3～5 分鐘</li>
           <li>沒有標準答案</li>
           <li>不用輸入金額</li>
           <li>逐題答案不公開</li>
         </ul>
-        <button class="button button-primary" id="start-pair-invite">開始我的 14 題</button>
+        <button class="button button-primary" id="start-pair-invite">開始我的 12 題</button>
         <button class="button button-quiet" id="pair-invite-home">回到首頁</button>
       </section>
     `;
@@ -531,14 +591,14 @@
       <section class="screen flow-card" aria-labelledby="invite-title">
         <span class="eyebrow">你收到一份雙人邀請</span>
         <h1 id="invite-title">對方已經完成，現在換你</h1>
-        <p>你不會先看到對方的答案。完成 14 題後，才會整理兩人的默契、差異和可以先談的事。</p>
+        <p>你不會先看到對方的答案。完成 12 題後，才會整理兩人的默契、差異和可以先談的事。</p>
         <ul class="trust-row">
-          <li>約 4～6 分鐘</li>
+          <li>約 3～5 分鐘</li>
           <li>沒有標準答案</li>
           <li>不輸入金額</li>
           <li>逐題答案不公開</li>
         </ul>
-        <button class="button button-primary" id="start-invitee">開始我的 14 題</button>
+        <button class="button button-primary" id="start-invitee">開始我的 12 題</button>
         <button class="button button-quiet" id="decline-invite">我現在不想填</button>
       </section>
     `;
@@ -559,7 +619,6 @@
         <h1 id="consent-title">報告產生前，再確認一次</h1>
         <ul class="preview-list">
           <li><strong>你需要的支持</strong><br>${preview.support}</li>
-          <li><strong>你想先改變的事</strong><br>${preview.goal}</li>
         </ul>
         ${personalPrivateNote(state.answersB)}
         <div class="info-strip"><strong>共同報告會顯示：</strong>默契指標、六個面向、你們的類型和對話卡。<br><strong>不會顯示：</strong>逐題答案、誰觸發敏感提醒、個人私密說明。</div>
@@ -612,16 +671,38 @@
   }
 
   function loadGrowthHistory() {
+    return tracking.normalizeHistory(growthStore.history);
+  }
+
+  function personalCenterHref() {
+    const rawHref = String(growthAdapter?.personalCenterHref || "").trim();
+    if (!rawHref) return "";
     try {
-      const raw = window.localStorage.getItem(tracking.storageKey);
-      return tracking.normalizeHistory(raw ? JSON.parse(raw) : []);
+      const url = new URL(rawHref, window.location.origin);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
     } catch (_error) {
-      return [];
+      return "";
     }
   }
 
-  function saveGrowthHistory(history) {
-    window.localStorage.setItem(tracking.storageKey, tracking.serializeHistory(history));
+  async function hydrateGrowthHistory(result) {
+    if (!hasGrowthPlatform || growthStore.status !== "idle") return;
+    growthStore.status = "loading";
+    refreshGrowthSection(result, { scroll: false });
+    try {
+      growthStore.history = tracking.normalizeHistory(await growthAdapter.loadHistory());
+      const current = tracking.createSnapshot(result);
+      const savedCurrent = growthStore.history.find(
+        (record) => record.testedOn === current.testedOn && record.score === current.score
+      );
+      if (!state.growthGoal && savedCurrent?.growthGoalId) {
+        state.growthGoal = savedCurrent.growthGoalId;
+      }
+      growthStore.status = "ready";
+    } catch (_error) {
+      growthStore.status = "error";
+    }
+    refreshGrowthSection(result, { scroll: false });
   }
 
   function formatTrackingDate(dateKey, compact = false) {
@@ -707,31 +788,79 @@
     `;
   }
 
+  function selectedGrowthGoal() {
+    if (!state.growthGoal) return null;
+    const question = data.personalizationQuestions.find((item) => item.id === "q14");
+    const option = question?.options.find((item) => item.value === state.growthGoal);
+    return option ? { id: option.value, label: option.label } : null;
+  }
+
   function growthSectionMarkup(result) {
     const history = loadGrowthHistory();
-    const currentSnapshot = tracking.createSnapshot(result);
-    const currentSaved = tracking.containsSnapshot(history, currentSnapshot);
+    const growthGoal = selectedGrowthGoal();
+    const currentSnapshot = tracking.createSnapshot(result, new Date(), growthGoal);
+    const currentSaved = hasGrowthPlatform && tracking.containsSnapshot(history, currentSnapshot);
     const displayHistory = tracking.upsertSnapshot(history, currentSnapshot);
     const nextDate = tracking.addMonths(currentSnapshot.testedOn, 3);
-    const saveLabel = history.length === 0 ? "保存本次，開始追蹤" : "保存這次重測結果";
-    const chartNote = !currentSaved
-      ? "圖上已先放入本次結果；按下保存後，才會留在這台裝置。"
-      : displayHistory.length < 2
-        ? "目前只有第一次基準；下次保存後，就會形成變化曲線。"
-        : "曲線顯示每次保存的整體指標，下面則整理六個面向和上次的差異。";
+    const saveLabel = history.length === 0 ? "保存到個人中心" : "保存這次重測結果";
+    const statusLabel = growthStore.status === "preview"
+      ? "個人中心整合預覽"
+      : growthStore.status === "loading"
+        ? "正在讀取紀錄"
+        : growthStore.status === "error"
+          ? "暫時無法讀取"
+          : history.length > 0
+            ? `個人中心已有 ${history.length} 次`
+            : "個人中心尚無紀錄";
+    const chartNote = growthStore.status === "preview"
+      ? "目前是本機整合預覽；接上好理家在會員 API 後，這裡會讀取個人中心的歷次紀錄。"
+      : growthStore.status === "loading"
+        ? "正在從個人中心讀取歷次紀錄。"
+        : growthStore.status === "error"
+          ? "暫時無法讀取個人中心紀錄，請稍後再試。"
+          : !currentSaved
+            ? "圖上已先放入本次結果；按下保存後，會加入個人中心的成長紀錄。"
+            : displayHistory.length < 2
+              ? "目前只有第一次基準；下次保存後，就會形成變化曲線。"
+              : "曲線顯示每次保存的整體指標，下面則整理六個面向和上次的差異。";
+    const centerHref = personalCenterHref();
+    const growthQuestion = data.personalizationQuestions.find((item) => item.id === "q14");
+    const growthGoalMessage = state.growthGoal
+      ? data.goalCopy[state.growthGoal]
+      : "先一起選一個最想看到的改變，三個月後再回來比較。";
 
     return `
       <section class="report-section full growth-section" id="growth-section" aria-labelledby="growth-title">
         <div class="report-section-heading">
           <span>RELATIONSHIP GROWTH</span>
           <h2 id="growth-title">關係成長追蹤</h2>
-          <p>保存這次的共同結果，3 個月後用同一台裝置再測一次，就能看見變化曲線。</p>
+          <p>把這次共同結果保存到好理家在個人中心，3 個月後再測一次，就能回來比較變化。</p>
+        </div>
+        <div class="growth-goal-card">
+          <span class="optional-pill">三個月目標・選填</span>
+          <h3>${growthQuestion.text}</h3>
+          <div class="growth-goal-options" role="group" aria-label="三個月後想改善的方向">
+            ${growthQuestion.options
+              .map(
+                (option) => `
+                  <button
+                    class="growth-goal-option${state.growthGoal === option.value ? " selected" : ""}"
+                    data-growth-goal="${option.value}"
+                    aria-pressed="${state.growthGoal === option.value ? "true" : "false"}"
+                    type="button"
+                  >${option.label}</button>
+                `
+              )
+              .join("")}
+          </div>
+          <p class="growth-goal-message" id="growth-goal-message">${growthGoalMessage}</p>
+          <small>這個選擇不影響測驗分數；按下保存後，會和本次結果一起放到個人中心。</small>
         </div>
         <div class="growth-layout">
           <div class="growth-chart-panel">
             <div class="growth-chart-heading">
               <h3>金錢默契指標變化</h3>
-              <span>${history.length > 0 ? `已保存 ${history.length} 次` : "尚未保存"}</span>
+              <span>${statusLabel}</span>
             </div>
             ${growthChartMarkup(displayHistory, currentSnapshot, currentSaved)}
             <p class="growth-chart-note">${chartNote}</p>
@@ -742,13 +871,11 @@
             <p>到時重新完成雙人測驗，再保存新結果，就能和這次比較。</p>
             <div class="growth-actions">
               ${currentSaved
-                ? `<div class="growth-saved-status">✓ 本次結果已保存</div>`
-                : `<button class="button button-primary" id="save-growth" type="button">${saveLabel}</button>`}
-              ${history.length > 0
-                ? `<button class="button button-quiet" id="clear-growth" type="button">清除這台裝置的追蹤紀錄</button>`
-                : ""}
+                ? `<div class="growth-saved-status">✓ 已保存到個人中心</div>
+                   ${centerHref ? `<a class="button button-secondary" href="${centerHref}">前往個人中心查看</a>` : ""}`
+                : `<button class="button button-primary" id="save-growth" type="button" ${growthStore.status === "loading" || growthStore.saving ? "disabled" : ""}>${growthStore.saving ? "正在保存…" : saveLabel}</button>`}
             </div>
-            <small>只保存測驗日期、總分與六個面向分數，不含逐題答案。清除瀏覽器資料後，紀錄也會消失。</small>
+            <small>保存測驗日期、總分、結果類型、六個面向分數，以及選填的三個月成長目標；不含逐題答案、配對碼或私密提醒。</small>
           </aside>
         </div>
         ${growthDeltaMarkup(displayHistory)}
@@ -756,49 +883,49 @@
     `;
   }
 
-  function refreshGrowthSection(result) {
+  function refreshGrowthSection(result, options = {}) {
     const section = document.getElementById("growth-section");
     if (!section) return;
     section.outerHTML = growthSectionMarkup(result);
     bindGrowthTracking(result);
-    window.requestAnimationFrame(() => {
-      document.getElementById("growth-section")?.scrollIntoView({ block: "center", behavior: "smooth" });
-    });
+    if (options.scroll !== false) {
+      window.requestAnimationFrame(() => {
+        document.getElementById("growth-section")?.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
+    }
   }
 
   function bindGrowthTracking(result) {
-    document.getElementById("save-growth")?.addEventListener("click", () => {
-      try {
-        const snapshot = tracking.createSnapshot(result);
-        saveGrowthHistory(tracking.upsertSnapshot(loadGrowthHistory(), snapshot));
-        refreshGrowthSection(result);
-        showToast("本次結果已保存，3 個月後再回來看看");
-      } catch (_error) {
-        showToast("這個瀏覽器目前無法保存追蹤紀錄");
-      }
+    document.querySelectorAll("[data-growth-goal]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.growthGoal = button.dataset.growthGoal;
+        refreshGrowthSection(result, { scroll: false });
+      });
     });
 
-    const clearButton = document.getElementById("clear-growth");
-    clearButton?.addEventListener("click", () => {
-      if (clearButton.dataset.confirmDelete !== "true") {
-        clearButton.dataset.confirmDelete = "true";
-        clearButton.classList.add("confirming");
-        clearButton.textContent = "再按一次，確認清除";
-        showToast("若確定要清除，請再按一次");
-        window.setTimeout(() => {
-          if (!clearButton.isConnected) return;
-          clearButton.dataset.confirmDelete = "false";
-          clearButton.classList.remove("confirming");
-          clearButton.textContent = "清除這台裝置的追蹤紀錄";
-        }, 5000);
+    document.getElementById("save-growth")?.addEventListener("click", async () => {
+      if (!hasGrowthPlatform) {
+        showToast("目前是本機整合預覽；接上會員系統後才能保存到個人中心");
         return;
       }
+      if (growthStore.saving) return;
+      growthStore.saving = true;
+      refreshGrowthSection(result, { scroll: false });
       try {
-        window.localStorage.removeItem(tracking.storageKey);
+        const payload = tracking.createPlatformPayload(result, new Date(), selectedGrowthGoal());
+        const response = await growthAdapter.saveSnapshot(payload);
+        const returnedHistory = response?.history || response?.records;
+        growthStore.history = returnedHistory
+          ? tracking.normalizeHistory(returnedHistory)
+          : tracking.upsertSnapshot(loadGrowthHistory(), payload);
+        growthStore.status = "ready";
+        growthStore.saving = false;
         refreshGrowthSection(result);
-        showToast("追蹤紀錄已從這台裝置清除");
+        showToast("本次結果已保存，可到個人中心查看");
       } catch (_error) {
-        showToast("目前無法清除追蹤紀錄");
+        growthStore.saving = false;
+        refreshGrowthSection(result, { scroll: false });
+        showToast("目前無法保存到個人中心，請稍後再試");
       }
     });
   }
@@ -808,6 +935,32 @@
     const result = state.result;
     const cards = pickDialogueCards(result);
     const serviceRecommendations = scoring.recommendServices(result);
+    const primaryService = serviceRecommendations.find((service) => service.role === "primary");
+    const secondaryServices = serviceRecommendations.filter((service) => service.role === "secondary");
+    const otherServices = serviceRecommendations.filter((service) => service.role === "other");
+    const serviceCardMarkup = (service) => {
+      const isPrimary = service.role === "primary";
+      const rankLabel = isPrimary ? "最適合現在" : service.role === "secondary" ? "也可以從這裡開始" : "其他服務";
+      return `
+        <article class="service-card service-card-${service.role}">
+          <div class="service-card-top">
+            <span class="service-rank">${rankLabel}</span>
+            <span class="service-icon" aria-hidden="true">${service.icon}</span>
+          </div>
+          <div class="service-card-copy">
+            <h3>${service.name}</h3>
+            <p>${service.reason}</p>
+          </div>
+          <a
+            class="button ${isPrimary ? "button-primary" : "button-secondary"}"
+            href="${service.href}"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="${service.cta}（另開新分頁）"
+          >${service.cta}<span aria-hidden="true"> ↗</span></a>
+        </article>
+      `;
+    };
     app.innerHTML = `
       <section class="screen report-shell" aria-labelledby="report-title">
         <div class="report-hero">
@@ -895,30 +1048,30 @@
             <div class="report-section-heading">
               <span>FAMILYFIN NEXT STEP</span>
               <h2 id="service-title">好理家在還可以</h2>
-              <p>不是待辦清單，也不用一次做完。先選一個目前負擔最小、最想試試看的服務就好。</p>
+              <p>依照你們的結果，先從一件最有感的事開始。以下先放一個主要下一步，也保留兩個可以自行選擇的方向。</p>
             </div>
-            <div class="service-grid">
-              ${serviceRecommendations
-                .map(
-                  (service, index) => `
-                    <article class="service-card${index < 3 ? " recommended" : " supporting"}">
-                      <span class="service-rank">${index === 0 ? "最適合現在" : index < 3 ? "接著可以" : "其他可用服務"}</span>
-                      <div class="service-icon" aria-hidden="true">${service.icon}</div>
-                      <h3>${service.name}</h3>
-                      <p>${service.reason}</p>
-                      <a
-                        class="button ${index === 0 ? "button-primary" : "button-secondary"}"
-                        href="${service.href}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="${service.cta}（另開新分頁）"
-                      >${service.cta}<span aria-hidden="true"> ↗</span></a>
-                    </article>
-                  `
-                )
-                .join("")}
+            <div class="service-recommendations">
+              ${serviceCardMarkup(primaryService)}
+              <div class="service-secondary-grid" aria-label="兩個次要選項">
+                ${secondaryServices.map(serviceCardMarkup).join("")}
+              </div>
             </div>
-            <p class="service-note">推薦順序只使用這次的共同分數與類型，不會把你們的逐題答案傳到好理家在。部分服務可能需要登入。</p>
+            <details class="service-more">
+              <summary>
+                <span class="service-more-copy">
+                  <strong>查看其他 ${otherServices.length} 項服務</strong>
+                  <small>點一下展開全部好理家在資源</small>
+                </span>
+                <span class="service-more-action" aria-hidden="true">
+                  <span class="service-more-state"></span>
+                  <span class="service-more-chevron">⌄</span>
+                </span>
+              </summary>
+              <div class="service-other-grid">
+                ${otherServices.map(serviceCardMarkup).join("")}
+              </div>
+            </details>
+            <p class="service-note">推薦順序只根據本次共同結果產生，點擊服務時不會帶出逐題答案。進入其他服務後，登入與資料保存方式以該服務頁面說明為準。</p>
           </section>
         </div>
 
@@ -937,6 +1090,7 @@
     }
     document.getElementById("restart-report").addEventListener("click", resetQuiz);
     bindGrowthTracking(result);
+    hydrateGrowthHistory(result);
     window.requestAnimationFrame(() => drawRadar(result.axes));
     focusMain();
   }
@@ -1044,6 +1198,7 @@
       partnerCode: "",
       result: null,
       resultLink: "",
+      growthGoal: "",
       transitionLocked: false
     });
     renderLanding();

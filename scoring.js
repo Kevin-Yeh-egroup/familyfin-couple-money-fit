@@ -208,65 +208,66 @@
   }
 
   function recommendServices(result) {
-    const priorities = {
-      askAI: 30,
-      accounting: 20,
-      timeResource: 15,
-      financialPlanning: 20,
-      consultation: 5
-    };
-    const add = (id, value) => {
-      priorities[id] = (priorities[id] || 0) + value;
-    };
     const focusId = result.focus?.id || "repair";
     const focusLabel = result.focus?.shortLabel || "目前最值得先談的地方";
-
-    const focusPriorities = {
-      safety: { financialPlanning: 100, askAI: 40 },
-      spending: { accounting: 100, askAI: 30 },
-      future: { financialPlanning: 100, askAI: 30 },
-      transparency: { askAI: 100, timeResource: 25 },
-      autonomy: { timeResource: 100, financialPlanning: 30 },
-      repair: { askAI: 100, timeResource: 60 }
+    const focusPlans = {
+      safety: ["financialCheck", "financialPlanning", "accounting"],
+      spending: ["accounting", "financialPlanning", "askAI"],
+      future: ["financialPlanning", "accounting", "financialCheck"],
+      transparency: ["askAI", "timeResource", "financialAnxiety"],
+      autonomy: ["timeResource", "financialPlanning", "accounting"],
+      repair: ["askAI", "financialAnxiety", "consultation"]
     };
-    Object.entries(focusPriorities[focusId] || {}).forEach(([id, value]) => add(id, value));
+    let featuredIds = focusPlans[focusId] || focusPlans.repair;
+    let recommendationKey = `focus-${focusId}`;
 
-    if (result.typeKey === "foundation") {
-      add("consultation", 150);
-      add("askAI", 20);
+    if ((result.privateControlFlagCount || 0) > 0) {
+      featuredIds = ["consultation", "financialAnxiety", "financialCheck"];
+      recommendationKey = "safety-support";
+    } else if ((result.confidence ?? 100) < 75) {
+      featuredIds = ["askAI", "financialCheck", "timeResource"];
+      recommendationKey = "low-confidence";
+    } else if (result.typeKey === "foundation" || (result.averages?.readiness ?? 100) < 60) {
+      featuredIds = ["consultation", "askAI", "financialAnxiety"];
+      recommendationKey = "support-first";
     } else if (result.typeKey === "dualTrack") {
-      add("timeResource", 60);
-      add("financialPlanning", 20);
-    } else if (result.typeKey === "complement") {
-      add("askAI", 40);
-      add("timeResource", 30);
-      add("financialPlanning", 20);
-    } else if (result.typeKey === "cocreate") {
-      add("financialPlanning", 120);
-      add("accounting", 20);
+      featuredIds = ["timeResource", "financialPlanning", "accounting"];
+      recommendationKey = "dual-track";
+    } else if (result.typeKey === "cocreate" && result.scoreLevel?.id === "stable") {
+      featuredIds = ["financialPlanning", "accounting", "financialCheck"];
+      recommendationKey = "stable-cocreate";
     }
-
-    if (result.privateControlFlagCount > 0) add("consultation", 100);
 
     const reasons = {
       askAI: `你們最值得先談的是「${focusLabel}」。可以先把卡住的地方整理成一句問題，找一個比較容易開始的方向。`,
-      accounting: "把日常收支從印象變成看得見的資料，比較容易一起討論自由額度、共同開銷和存錢安排。",
+      accounting: "先看一個月的日常收支，比較容易一起討論自由額度、共同開銷和存錢安排。",
       timeResource: "金錢分工不只看收入，也包含時間、體力、技能、知識與人脈；適合一起看見彼此沒有寫在帳單上的付出。",
-      financialPlanning: "把共同目標、期限、可投入的金額與緊急預備金放在同一份規劃裡，讓想法慢慢變成做得到的步驟。",
+      financialPlanning: "把旅行、結婚、買房或緊急預備金等共同目標，整理成期限與做得到的準備步驟。",
+      financialAnxiety: "用 15 題整理金錢壓力來時比較容易出現的反應。這是一份自我整理，不是心理診斷。",
+      financialCheck:
+        (result.confidence ?? 100) < 75
+          ? "這次有人保留了較多題目，可以先各自整理目前的財務狀態，再決定想一起談到哪裡。"
+          : "先各自了解目前生活有哪些支撐、哪些地方比較吃力，會更容易找到兩人真正需要處理的重點。",
       consultation:
         result.typeKey === "foundation"
-          ? "如果金錢壓力已經影響生活，或兩人一談就卡住，可以先查看申請條件，讓專業人員陪著釐清狀況與方向。"
-          : "當你們需要中立的第三方一起釐清收支、債務或重大決定時，可以查看真人諮詢的申請方式。"
+          ? "如果金錢壓力已經影響生活，或一談到錢就感到壓力，可以由其中一位先查看申請條件，讓專業人員協助整理個人財務狀況與方向。"
+          : "如果其中一位想先釐清自己的收支、債務或重大決定，可以查看免費個人線上諮詢的申請方式。"
     };
 
-    return data.services
-      .map((service, index) => ({
+    const orderedIds = [
+      ...featuredIds,
+      ...data.services.map((service) => service.id).filter((id) => !featuredIds.includes(id))
+    ];
+
+    return orderedIds.map((id, index) => {
+      const service = data.services.find((item) => item.id === id);
+      return {
         ...service,
-        priority: priorities[service.id],
-        reason: reasons[service.id],
-        sourceOrder: index
-      }))
-      .sort((left, right) => right.priority - left.priority || left.sourceOrder - right.sourceOrder);
+        role: index === 0 ? "primary" : index < 3 ? "secondary" : "other",
+        reason: reasons[id],
+        recommendationKey
+      };
+    });
   }
 
   function personalPreview(answers) {
