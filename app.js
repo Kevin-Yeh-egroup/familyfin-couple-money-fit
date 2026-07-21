@@ -949,13 +949,20 @@
 
           <section class="report-section full" aria-labelledby="difference-title">
             <h2 id="difference-title">你們的差異地圖</h2>
+            <p>顏色代表目前的合作狀態，不是誰答對或答錯。</p>
+            <div class="difference-legend" aria-label="差異地圖顏色說明">
+              <span><i class="aligned" aria-hidden="true"></i>合作順暢</span>
+              <span><i class="complement" aria-hidden="true"></i>值得先說好</span>
+              <span><i class="discuss" aria-hidden="true"></i>建議優先談</span>
+              ${result.axes.some((axis) => axis.status === "unanswered") ? '<span><i class="unanswered" aria-hidden="true"></i>這次先保留</span>' : ""}
+            </div>
             <ul class="difference-list">
               ${result.axes
                 .map(
                   (axis) => `
                     <li class="difference-item ${axis.status}">
                       <strong>${axis.shortLabel}</strong>
-                      <span>${scoring.explainStatus(axis.status)}</span>
+                      <span>${scoring.explainStatus(axis)}</span>
                     </li>
                   `
                 )
@@ -967,7 +974,9 @@
             <h2 id="summary-title">先看這三件事</h2>
             <ul class="preview-list">
               <li><strong>你們本來就有的默契</strong><br>${result.strengths.map((axis) => axis.shortLabel).join("、")}是目前最合拍的地方。</li>
-              <li><strong>不同也可以互補</strong><br>在${result.complement.shortLabel}這件事上，不一定要誰改成誰；先說好兩人都能接受的做法就好。</li>
+              ${result.complement
+                ? `<li><strong>不同也可以互補</strong><br>在${result.complement.shortLabel}這件事上，不一定要誰改成誰；先說好兩人都能接受的做法就好。</li>`
+                : "<li><strong>把默契變成約定</strong><br>目前沒有明顯需要磨合的面向；遇到生活變化時，再一起更新原本的做法就好。</li>"}
               <li><strong>最值得先談</strong><br>${result.focus.conversation}</li>
             </ul>
           </section>

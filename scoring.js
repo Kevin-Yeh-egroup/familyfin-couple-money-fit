@@ -31,8 +31,8 @@
 
   function standardPreferenceScore(valueA, valueB, bothReady) {
     const gap = Math.abs(Number(valueA) - Number(valueB));
-    if (gap === 0) return 95;
-    if (gap === 1) return bothReady ? 100 : 85;
+    if (gap === 0) return 100;
+    if (gap === 1) return bothReady ? 90 : 82;
     if (gap === 2) return 72;
     return 50;
   }
@@ -40,7 +40,7 @@
   function repairPreferenceScore(valueA, valueB) {
     const a = Number(valueA);
     const b = Number(valueB);
-    if (a === b) return 95;
+    if (a === b) return 100;
     const key = [a, b].sort((left, right) => left - right).join("-");
     const matrix = {
       "0-1": 85,
@@ -128,12 +128,11 @@
       controlFlagCount += collaboration.flagCount;
       answeredCount += collaboration.answered + preference.answered;
 
+      const missing = preference.missing || collaboration.answered < 2;
       let status = "discuss";
-      if (score >= 70 && preference.gap === 1 && collaboration.score >= 75) {
-        status = "complement";
-      } else if (score >= 78 && preference.score >= 85 && collaboration.score >= 70) {
-        status = "aligned";
-      }
+      if (missing) status = "unanswered";
+      else if (score >= 85) status = "aligned";
+      else if (score >= 70) status = "complement";
 
       const result = {
         ...axis,
@@ -142,7 +141,7 @@
         preferenceGap: preference.gap,
         readinessScore: Math.round(collaboration.score),
         status,
-        missing: preference.missing || collaboration.answered < 2,
+        missing,
         privateFlagCount: collaboration.flagCount
       };
       totalWeighted += result.score * axis.weight;
@@ -183,8 +182,7 @@
 
     const sorted = [...axisResults].sort((left, right) => right.score - left.score);
     const strengths = sorted.slice(0, 2);
-    const complement =
-      axisResults.find((axis) => axis.status === "complement") || sorted[2];
+    const complement = axisResults.find((axis) => axis.status === "complement") || null;
     const focus = sorted[sorted.length - 1];
     const confidence = Math.round((answeredCount / (data.axes.length * 4)) * 100);
 
@@ -285,10 +283,19 @@
     return { rhythm, skippedCount };
   }
 
-  function explainStatus(status) {
-    if (status === "aligned") return "本來就有默契";
-    if (status === "complement") return "想法不同，但可以互補";
-    return "先說好做法會更安心";
+  function explainStatus(axisOrStatus) {
+    const axis = typeof axisOrStatus === "string" ? { status: axisOrStatus } : axisOrStatus;
+    if (axis.status === "unanswered") return "有人先保留，這次不判定";
+    if (axis.status === "aligned") {
+      if (axis.preferenceGap === 0) return "本來就有默契";
+      if (axis.preferenceGap === 1) return "做法不同，但合作順暢";
+      return "已經找到能一起合作的方式";
+    }
+    if (axis.status === "complement") {
+      if (axis.preferenceGap === 0) return "想法接近，再說好細節";
+      return "有些差異，值得先說好";
+    }
+    return "建議優先討論";
   }
 
   const scoring = {

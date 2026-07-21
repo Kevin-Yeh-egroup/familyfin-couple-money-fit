@@ -881,6 +881,45 @@ h3 {
   gap: 0.75rem;
 }
 
+.difference-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  margin: 0.8rem 0 1rem;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+.difference-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.difference-legend i {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid rgb(83 57 49 / 8%);
+}
+
+.difference-legend i.aligned {
+  background: var(--blue);
+}
+
+.difference-legend i.complement {
+  background: var(--gold);
+}
+
+.difference-legend i.discuss {
+  background: var(--coral);
+}
+
+.difference-legend i.unanswered {
+  background: #aaa0a0;
+}
+
 .difference-item {
   border-radius: var(--radius-sm);
   padding: 0.9rem;
@@ -896,6 +935,10 @@ h3 {
 
 .difference-item.discuss {
   background: var(--coral-light);
+}
+
+.difference-item.unanswered {
+  background: #f6f3f3;
 }
 
 .difference-item strong,

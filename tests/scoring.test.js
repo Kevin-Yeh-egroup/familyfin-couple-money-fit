@@ -24,20 +24,47 @@ function healthyAnswers(preferenceValue = 1) {
 
 test("matching healthy answers produce a high but non-diagnostic score", () => {
   const result = scoring.calculatePairResult(healthyAnswers(1), healthyAnswers(1));
-  assert.equal(result.score, 95);
+  assert.equal(result.score, 100);
   assert.equal(result.typeKey, "cocreate");
   assert.equal(result.privateControlFlagCount, 0);
   assert.equal(result.confidence, 100);
+  assert.ok(result.axes.every((axis) => axis.status === "aligned"));
+  assert.equal(result.complement, null);
 });
 
-test("one-step preference differences with strong collaboration count as healthy complement", () => {
+test("one-step preference differences never score higher than exact agreement", () => {
   const left = healthyAnswers(1);
   const right = healthyAnswers(2);
   right.q11 = 2;
   const result = scoring.calculatePairResult(left, right);
-  assert.ok(result.axes.slice(0, 5).every((axis) => axis.preferenceScore === 100));
-  assert.ok(result.axes.some((axis) => axis.status === "complement"));
+  assert.ok(result.axes.slice(0, 5).every((axis) => axis.preferenceScore === 90));
+  assert.ok(result.axes.slice(0, 5).every((axis) => axis.status === "aligned"));
+  assert.ok(result.axes.slice(0, 5).every((axis) => scoring.explainStatus(axis) === "做法不同，但合作順暢"));
   assert.ok(result.score >= 90);
+});
+
+test("difference map status follows the displayed axis score bands", () => {
+  const left = healthyAnswers(0);
+  const right = healthyAnswers(3);
+  right.q12 = "d";
+  const result = scoring.calculatePairResult(left, right);
+
+  for (const axis of result.axes) {
+    if (axis.status === "unanswered") continue;
+    if (axis.score >= 85) assert.equal(axis.status, "aligned");
+    else if (axis.score >= 70) assert.equal(axis.status, "complement");
+    else assert.equal(axis.status, "discuss");
+  }
+});
+
+test("skipped answers use a neutral unjudged state", () => {
+  const left = healthyAnswers(1);
+  const right = healthyAnswers(1);
+  left.q1 = "skipped";
+  const result = scoring.calculatePairResult(left, right);
+  const safety = result.axes.find((axis) => axis.id === "safety");
+  assert.equal(safety.status, "unanswered");
+  assert.equal(scoring.explainStatus(safety), "有人先保留，這次不判定");
 });
 
 test("matching control answers do not receive a high compatibility score", () => {
@@ -81,7 +108,7 @@ test("skipping sensitive questions lowers confidence without creating a control 
 test("repair style compatibility matrix preserves useful differences", () => {
   assert.equal(scoring.repairPreferenceScore(1, 2), 90);
   assert.equal(scoring.repairPreferenceScore(0, 2), 55);
-  assert.equal(scoring.repairPreferenceScore(3, 3), 95);
+  assert.equal(scoring.repairPreferenceScore(3, 3), 100);
 });
 
 test("score levels cover every display boundary", () => {

@@ -163,3 +163,14 @@ test("other services look expandable and growth saving is gated to the member pl
   assert.match(appSource, /保存到個人中心/);
   assert.doesNotMatch(appSource, /window\.localStorage|clear-growth|清除瀏覽器資料後/);
 });
+
+test("difference map explains colors and uses the full axis state for copy", () => {
+  assert.match(appSource, /顏色代表目前的合作狀態，不是誰答對或答錯/);
+  assert.match(appSource, /合作順暢/);
+  assert.match(appSource, /值得先說好/);
+  assert.match(appSource, /建議優先談/);
+  assert.match(appSource, /scoring\.explainStatus\(axis\)/);
+  assert.match(appSource, /把默契變成約定/);
+  assert.match(styles, /\.difference-legend/);
+  assert.match(styles, /\.difference-item\.unanswered/);
+});
