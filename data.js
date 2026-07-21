@@ -263,7 +263,8 @@
     }
   ];
 
-  const personalizationQuestions = [
+  // Retained only so previously issued M1 pair codes can still be decoded.
+  const legacyPersonalizationQuestions = [
     {
       id: "q13",
       kind: "personalization",
@@ -289,6 +290,8 @@
       ]
     }
   ];
+
+  const growthQuestion = legacyPersonalizationQuestions.find((question) => question.id === "q14");
 
   const resultTypes = {
     foundation: {
@@ -392,14 +395,6 @@
     }
   ];
 
-  const supportCopy = {
-    listen: "你比較需要先被聽見，再一起找答案。",
-    organize: "你比較需要有人陪你把資訊與下一步整理清楚。",
-    space: "你需要一點整理時間，也希望對方記得回來關心。",
-    resource: "你重視可靠的外部資源與一起尋求協助。",
-    skipped: "你可以先保留，等覺得安全時再說。"
-  };
-
   const goalCopy = {
     surprise: "你希望少一點沒先說的花費或金錢狀況。",
     enjoy: "你希望兩人花錢享受時，不用一直覺得不應該。",
@@ -415,9 +410,9 @@
     resultTypes,
     services,
     dialogueCards,
-    supportCopy,
     goalCopy,
-    personalizationQuestions,
+    growthQuestion,
+    legacyPersonalizationQuestions,
     version: 1,
     questionSetVersion: 2
   };

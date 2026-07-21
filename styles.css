@@ -577,23 +577,6 @@ h3 {
   color: var(--ink-soft);
 }
 
-.support-choice-card {
-  max-width: 760px;
-  margin-inline: auto;
-}
-
-.optional-question {
-  margin-top: 1.4rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1.25rem;
-}
-
-.optional-question h2 {
-  margin: 0.7rem 0 0;
-  color: #5f4b66;
-  font-size: clamp(1.3rem, 3vw, 1.65rem);
-}
-
 .optional-pill {
   display: inline-flex;
   width: fit-content;
@@ -603,11 +586,6 @@ h3 {
   padding: 0.35rem 0.7rem;
   font-size: 0.78rem;
   font-weight: 900;
-}
-
-.optional-skip {
-  width: 100%;
-  margin-top: 1rem;
 }
 
 .privacy-pill {

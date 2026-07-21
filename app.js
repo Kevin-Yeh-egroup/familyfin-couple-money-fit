@@ -365,59 +365,11 @@
   function completeQuiz() {
     if (state.mode === "pair-solo" || state.mode === "same-a") {
       state.answersA = { ...state.answers };
-      renderSupportChoice("a", state.mode === "same-a");
+      renderPersonalPreview(state.mode === "same-a");
       return;
     }
     state.answersB = { ...state.answers };
-    renderSupportChoice("b", false);
-  }
-
-  function renderSupportChoice(person, sameDevice) {
-    setScreen("support-choice");
-    const question = data.personalizationQuestions.find((item) => item.id === "q13");
-    const answers = person === "a" ? state.answersA : state.answersB;
-    app.innerHTML = `
-      <section class="screen flow-card support-choice-card" aria-labelledby="support-choice-title">
-        <span class="eyebrow">12 題核心測驗已完成</span>
-        <h1 id="support-choice-title">讓提醒更貼近你</h1>
-        <p>下面這題可以選填，不影響分數、配對結果，也不會出現在伴侶看到的共同報告。</p>
-        <div class="optional-question">
-          <span class="optional-pill">選填・不計分</span>
-          <h2>${question.text}</h2>
-          <div class="option-list" role="group" aria-label="私人支持偏好">
-            ${question.options
-              .map(
-                (option, index) => `
-                  <button
-                    class="option-button"
-                    data-support-value="${option.value}"
-                    data-letter="${letters[index]}"
-                    aria-pressed="false"
-                  >${option.label}</button>
-                `
-              )
-              .join("")}
-          </div>
-        </div>
-        <button class="button button-quiet optional-skip" id="skip-support">先略過，繼續</button>
-      </section>
-    `;
-
-    const continueFlow = () => {
-      if (person === "a") renderPersonalPreview(sameDevice);
-      else renderSecondConsent();
-    };
-    app.querySelectorAll("[data-support-value]").forEach((button) => {
-      button.addEventListener("click", () => {
-        answers.q13 = button.dataset.supportValue;
-        continueFlow();
-      });
-    });
-    document.getElementById("skip-support").addEventListener("click", () => {
-      answers.q13 = "skipped";
-      continueFlow();
-    });
-    focusMain();
+    renderSecondConsent();
   }
 
   function renderPersonalPreview(sameDevice) {
@@ -430,7 +382,6 @@
         <p>這不是在評分誰比較會理財。等兩人都完成後，才會整理共同的默契與差異。</p>
         <ul class="preview-list">
           <li><strong>你的第一個節奏</strong><br>${preview.rhythm}</li>
-          <li><strong>你需要的支持</strong><br>${preview.support}</li>
         </ul>
         ${preview.skippedCount ? `<p class="info-strip">你在 12 題核心測驗中保留了 ${preview.skippedCount} 題。這不會扣分，配對報告會用比較保守的方式呈現。</p>` : ""}
         ${personalPrivateNote(state.answersA)}
@@ -612,14 +563,10 @@
 
   function renderSecondConsent() {
     setScreen("consent-b");
-    const preview = scoring.personalPreview(state.answersB);
     app.innerHTML = `
       <section class="screen flow-card" aria-labelledby="consent-title">
         <span class="eyebrow">第二份完成</span>
         <h1 id="consent-title">報告產生前，再確認一次</h1>
-        <ul class="preview-list">
-          <li><strong>你需要的支持</strong><br>${preview.support}</li>
-        </ul>
         ${personalPrivateNote(state.answersB)}
         <div class="info-strip"><strong>共同報告會顯示：</strong>默契指標、六個面向、你們的類型和對話卡。<br><strong>不會顯示：</strong>逐題答案、誰觸發敏感提醒、個人私密說明。</div>
         <label class="consent-box">
@@ -790,8 +737,7 @@
 
   function selectedGrowthGoal() {
     if (!state.growthGoal) return null;
-    const question = data.personalizationQuestions.find((item) => item.id === "q14");
-    const option = question?.options.find((item) => item.value === state.growthGoal);
+    const option = data.growthQuestion?.options.find((item) => item.value === state.growthGoal);
     return option ? { id: option.value, label: option.label } : null;
   }
 
@@ -824,7 +770,7 @@
               ? "目前只有第一次基準；下次保存後，就會形成變化曲線。"
               : "曲線顯示每次保存的整體指標，下面則整理六個面向和上次的差異。";
     const centerHref = personalCenterHref();
-    const growthQuestion = data.personalizationQuestions.find((item) => item.id === "q14");
+    const growthQuestion = data.growthQuestion;
     const growthGoalMessage = state.growthGoal
       ? data.goalCopy[state.growthGoal]
       : "先一起選一個最想看到的改變，三個月後再回來比較。";

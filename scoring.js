@@ -280,11 +280,9 @@
       else rhythm = "你很重視兩人一起留下回憶，也願意為此花錢。";
     }
 
-    const support = data.supportCopy[answers?.q13 ?? "skipped"] || data.supportCopy.skipped;
-    const goal = data.goalCopy[answers?.q14 ?? "skipped"] || data.goalCopy.skipped;
     const skippedCount = data.questions.filter((question) => answers?.[question.id] === "skipped").length;
 
-    return { rhythm, support, goal, skippedCount };
+    return { rhythm, skippedCount };
   }
 
   function explainStatus(status) {

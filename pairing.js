@@ -9,7 +9,7 @@
   const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
   const checksumLength = 2;
   const coreQuestions = data.questions;
-  const legacyQuestions = [...data.questions, ...(data.personalizationQuestions || [])];
+  const legacyQuestions = [...data.questions, ...(data.legacyPersonalizationQuestions || [])];
   const schemas = {
     M1: { prefix: "M1", payloadLength: 7, questions: legacyQuestions },
     M2: { prefix: "M2", payloadLength: 6, questions: coreQuestions }

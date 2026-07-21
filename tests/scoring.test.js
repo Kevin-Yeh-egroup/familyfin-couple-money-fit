@@ -18,9 +18,7 @@ function healthyAnswers(preferenceValue = 1) {
     q9: preferenceValue,
     q10: "c",
     q11: 1,
-    q12: "b",
-    q13: "listen",
-    q14: "plan"
+    q12: "b"
   };
 }
 

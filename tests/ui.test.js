@@ -133,16 +133,20 @@ test("question 5 uses an everyday savings rhythm and question 8 separates consen
   );
 });
 
-test("round two uses 12 core questions and moves personalization out of scoring", () => {
+test("round two uses 12 core questions and goes directly to pairing", () => {
   assert.equal(data.questions.length, 12);
   assert.deepEqual(data.questions.map((question) => question.id), [
     "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12"
   ]);
-  assert.deepEqual(data.personalizationQuestions.map((question) => question.id), ["q13", "q14"]);
-  assert.match(appSource, /12 題核心測驗已完成/);
-  assert.match(appSource, /讓提醒更貼近你/);
+  assert.equal(data.growthQuestion.id, "q14");
+  assert.deepEqual(data.legacyPersonalizationQuestions.map((question) => question.id), ["q13", "q14"]);
+  assert.match(appSource, /renderPersonalPreview\(state\.mode === "same-a"\)/);
+  assert.match(appSource, /state\.answersB = \{ \.\.\.state\.answers \};[\s\S]*?renderSecondConsent\(\)/);
+  assert.doesNotMatch(appSource, /renderSupportChoice|support-choice-title|data-support-value/);
+  assert.doesNotMatch(appSource, /讓提醒更貼近你/);
   assert.doesNotMatch(appSource, /想讓私人提醒更貼近你嗎/);
-  assert.match(appSource, /選填・不計分/);
+  assert.doesNotMatch(appSource, /你需要的支持|選填・不計分/);
+  assert.doesNotMatch(styles, /support-choice-card|optional-question|optional-skip/);
   assert.match(appSource, /data-growth-goal/);
   assert.match(appSource, /growthGoalId|selectedGrowthGoal/);
   assert.match(appSource, /會和本次結果一起放到個人中心/);
